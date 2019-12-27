@@ -1,25 +1,33 @@
 package com.fairanswers.KubeUser;
 
 public class User {
-	String id;
+	String name;
+	String namespace;
 	String token;
 	String cert;
 	String config;
 	
 	public User() {}
 	
-	public User(String id, String token, String cert, String config) {
+	public User(String id, String namespace, String token, String cert, String config) {
 		super();
-		this.id = id;
+		this.name = id;
+		this.namespace=namespace;
 		this.token = token;
 		this.cert = cert;
 		this.config = config;
 	}
-	public String getId() {
-		return id;
+	public String getName() {
+		return name;
 	}
-	public void setId(String id) {
-		this.id = id;
+	public void setName(String id) {
+		this.name = id;
+	}
+	public String getNamespace() {
+		return namespace;
+	}
+	public void setNamespace(String namespace) {
+		this.namespace = namespace;
 	}
 	public String getCert() {
 		return cert;

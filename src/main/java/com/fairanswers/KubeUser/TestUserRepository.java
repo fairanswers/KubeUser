@@ -2,7 +2,7 @@ package com.fairanswers.KubeUser;
 
 public class TestUserRepository {
 
-	User[] allUsers =new User[] {new User("1", "1","1", "1"), new User("2", "2","2", "2")};
+	User[] allUsers =new User[] {new User("1", "1", "1","1", "1"), new User("2", "2", "2","2", "2")};
 	public User[] list() {
 		return allUsers;
 	}

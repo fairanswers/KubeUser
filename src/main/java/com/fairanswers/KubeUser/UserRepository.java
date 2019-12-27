@@ -11,50 +11,44 @@ import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.KubeConfig;
+
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 
-/**
- * A simple example of how to use the Java API from an application outside a kubernetes cluster
- *
- * <p>Easiest way to run this: mvn exec:java
- * -Dexec.mainClass="io.kubernetes.client.examples.KubeConfigFileClientExample"
- *
- * <p>From inside $REPO_DIR/examples
- */
-
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UserRepository {
+	Logger logger = LoggerFactory.getLogger(UserRepository.class);
 
 	private static final Integer TIMEOUT_SEC = 60;
 
-	public boolean connect() {
-		
+	ApiClient client;
+	CoreV1Api api;
+	String kubeConfigPath = "kubeconfig.yaml";
+	boolean isConnected=false;
+	
+	public boolean connect() throws FileNotFoundException, IOException {
+		client = ClientBuilder.kubeconfig(KubeConfig.loadKubeConfig(new FileReader(kubeConfigPath))).build();
+		Configuration.setDefaultApiClient(client);
+		api = new CoreV1Api();
+		isConnected=true;
 		return true;
 	}
 
-	public User[] list() {
-		String kubeConfigPath = "kubeconfig.yaml";
+	public User[] list() throws Exception {
+		if(!isConnected) {
+			connect();
+		}
 		User [] users = new User[100];
 
 		try {
-			// loading the out-of-cluster config, a kubeconfig from file-system
-			ApiClient client = ClientBuilder.kubeconfig(KubeConfig.loadKubeConfig(new FileReader(kubeConfigPath))).build();
-	
-			// set the global default api-client to the in-cluster one from above
-			Configuration.setDefaultApiClient(client);
-	
-			// the CoreV1Api loads default api-client from global configuration.
-			CoreV1Api api = new CoreV1Api();
-	
 			int i=0;
-			// invokes the CoreV1Api client
-			//V1PodList list = api.listPodForAllNamespaces(null, null, null, null, null, null, null, null, null);
 			V1ServiceAccountList list = api.listServiceAccountForAllNamespaces(false, null, null, null, 1000000, null, null, TIMEOUT_SEC, false);
 			for (V1ServiceAccount item : list.getItems()) {
-				users[i]=getUserFromServiceAccount(api, item);
+				users[i]=getUserFromServiceAccount(item);
 				if(i==99) {
 					break;
 				}
@@ -67,17 +61,12 @@ public class UserRepository {
 		return users;
 	}
 
-	private User getUserFromServiceAccount(CoreV1Api api, V1ServiceAccount item) throws ApiException {
+	private User getUserFromServiceAccount(V1ServiceAccount item) throws ApiException {
 		String name = getNameFromServiceAccount(item);
 		String namespace = item.getMetadata().getNamespace();
 		String secretName = item.getSecrets().get(0).getName();
-		V1Secret secret = getSecret(namespace, secretName, api);
-		return new User(name, 
-				getTokenFromSecret(secret), 
-				getCAFromSecret(secret), 
-				//getKubeconfigFromServiceAccount(item, api)
-				null
-				);
+		V1Secret secret = getSecret(namespace, secretName);
+		return getUserFromService(name, namespace, secret);
 	}
 
 	private String getCAFromSecret(V1Secret secret) {
@@ -88,7 +77,7 @@ public class UserRepository {
 		return new String(secret.getData().get("token") );
 	}
 
-	private V1Secret getSecret(String namespace, String name, CoreV1Api api) throws ApiException {
+	private V1Secret getSecret(String namespace, String name) throws ApiException {
 		V1Secret secret = api.readNamespacedSecret(name, namespace, null, true, true);
 		return secret;
 	}
@@ -97,9 +86,24 @@ public class UserRepository {
 		return item.getMetadata().getName();
 	}
 
-	public User[] read(String string) {
-		// TODO Auto-generated method stub
-		return null;
+	public User read(String name, String namespace) throws ApiException, FileNotFoundException, IOException {
+		if(!isConnected) {
+			connect();
+		}
+		V1ServiceAccount user = api.readNamespacedServiceAccount(name, namespace, null, true, false);
+		String secretName = user.getSecrets().get(0).getName();
+		V1Secret secret = getSecret(namespace, secretName);
+		return getUserFromService(name, namespace, secret);
+	}
+
+	private User getUserFromService(String name, String namespace, V1Secret secret) {
+		return new User(name, 
+				namespace,
+				getTokenFromSecret(secret), 
+				getCAFromSecret(secret), 
+				//getKubeconfigFromServiceAccount(item, api)
+				null
+				);
 	}
 
 }

@@ -1,5 +1,7 @@
 package com.fairanswers.KubeUser;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Optional;
 
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,13 +14,19 @@ import org.springframework.web.bind.annotation.RestController;
 public class ApiController {
 	private UserRepository userRepo = new UserRepository();
 	
-	@GetMapping(path= {"/", "/{id}"} )
-	public User[] list(@PathVariable("id") Optional<String> id) {
-		if(!id.isPresent()) {
+	ApiController() throws FileNotFoundException, IOException{
+		userRepo.connect();
+	}
+	
+	@GetMapping(path= {"/", "/{namespace}/{name}"} )
+	public User[] list(@PathVariable("namespace") Optional<String> namespace, @PathVariable("name") Optional<String> name) throws Exception {
+		if(!namespace.isPresent() && !name.isPresent()) {
 			return userRepo.list();
-		}else {
-			return userRepo.read(id.get());
 		}
+		if(namespace.isPresent() && name.isPresent()) {
+			return new User[] {userRepo.read(namespace.get(), name.get() )};
+		}
+		throw new Exception("User and Namespace must be both present, or both blank");
 		
 	}
 
