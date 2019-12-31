@@ -10,9 +10,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 @SpringBootApplication
-//@Configuration
-//@EnableWebMvc
-//@ComponentScan(basePackages="com.fairanswers.KubeUser")
 public class KubeUserApplication extends SpringBootServletInitializer{
 	private static final Logger LOGGER=LoggerFactory.getLogger(KubeUserApplication.class);
 	public static void main(String[] args) {

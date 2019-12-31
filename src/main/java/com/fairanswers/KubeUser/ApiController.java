@@ -4,6 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Optional;
 
+import org.springframework.context.annotation.Bean;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ApiController {
 	private UserRepository userRepo = new UserRepository();
 	
-	ApiController() throws FileNotFoundException, IOException{
+	ApiController(){
 		userRepo.connect();
 	}
 	
@@ -33,6 +34,14 @@ public class ApiController {
 	@GetMapping("/test")
 	public String sayHello() {
 		return "SFSG";
+	}
+
+	public UserRepository getUserRepo() {
+		return userRepo;
+	}
+
+	public void setUserRepo(UserRepository userRepo) {
+		this.userRepo = userRepo;
 	}
 
 }

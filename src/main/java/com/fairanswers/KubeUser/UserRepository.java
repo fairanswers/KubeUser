@@ -30,8 +30,16 @@ public class UserRepository {
 	String kubeConfigPath = "kubeconfig.yaml";
 	boolean isConnected=false;
 	
-	public boolean connect() throws FileNotFoundException, IOException {
-		client = ClientBuilder.kubeconfig(KubeConfig.loadKubeConfig(new FileReader(kubeConfigPath))).build();
+	public UserRepository() {
+		this.connect();
+	}
+	
+	public boolean connect() {
+		try {
+			client = ClientBuilder.kubeconfig(KubeConfig.loadKubeConfig(new FileReader(kubeConfigPath))).build();
+		} catch (Exception e) {
+			throw new Error("Could not connect to User Repository.", e);
+		}
 		Configuration.setDefaultApiClient(client);
 		api = new CoreV1Api();
 		isConnected=true;
@@ -39,20 +47,13 @@ public class UserRepository {
 	}
 
 	public User[] list() throws Exception {
-		if(!isConnected) {
-			connect();
-		}
-		User [] users = new User[100];
-
+		User [] users=null;
 		try {
 			int i=0;
 			V1ServiceAccountList list = api.listServiceAccountForAllNamespaces(false, null, null, null, 1000000, null, null, TIMEOUT_SEC, false);
+			users = new User[list.getItems().size() ];
 			for (V1ServiceAccount item : list.getItems()) {
-				users[i]=getUserFromServiceAccount(item);
-				if(i==99) {
-					break;
-				}
-				i++;
+				users[i++]=getUserFromServiceAccount(item);  //Note: incremented
 			}
 		}
 		catch(Exception ex) {
@@ -86,10 +87,7 @@ public class UserRepository {
 		return item.getMetadata().getName();
 	}
 
-	public User read(String name, String namespace) throws ApiException, FileNotFoundException, IOException {
-		if(!isConnected) {
-			connect();
-		}
+	public User read(String name, String namespace) throws ApiException{
 		V1ServiceAccount user = api.readNamespacedServiceAccount(name, namespace, null, true, false);
 		String secretName = user.getSecrets().get(0).getName();
 		V1Secret secret = getSecret(namespace, secretName);
