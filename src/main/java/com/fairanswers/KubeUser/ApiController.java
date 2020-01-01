@@ -1,22 +1,24 @@
 package com.fairanswers.KubeUser;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+//@ComponentScan("com.fairanswers.KubeUser")
 @RestController
 @RequestMapping("/api")
 public class ApiController {
-	private UserRepository userRepo = new UserRepository();
+
+	@Autowired
+	private UserRepository userRepo;
 	
 	ApiController(){
-		userRepo.connect();
 	}
 	
 	@GetMapping(path= {"/", "/{namespace}/{name}"} )

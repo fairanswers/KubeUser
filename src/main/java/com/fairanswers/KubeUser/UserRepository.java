@@ -1,26 +1,26 @@
 package com.fairanswers.KubeUser;
 
+import java.io.FileReader;
+import java.io.Reader;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
+
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
-import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.KubeConfig;
 
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.ArrayList;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-public class UserRepository {
+//@Repository
+@Component
+public class UserRepository implements IUserRepository {
 	Logger logger = LoggerFactory.getLogger(UserRepository.class);
 
 	private static final Integer TIMEOUT_SEC = 60;
@@ -34,18 +34,28 @@ public class UserRepository {
 		this.connect();
 	}
 	
+	@Override
 	public boolean connect() {
 		try {
-			client = ClientBuilder.kubeconfig(KubeConfig.loadKubeConfig(new FileReader(kubeConfigPath))).build();
+			Reader reader = new FileReader(kubeConfigPath);
+			System.out.println("Reader "+reader);
+			KubeConfig config = KubeConfig.loadKubeConfig(reader );
+			System.out.println("config "+config);
+			ClientBuilder builderConfig = ClientBuilder.kubeconfig(config );
+			System.out.println("bconfig "+builderConfig);
+			client = builderConfig.build();
+			System.out.println("Client "+client);
 		} catch (Exception e) {
 			throw new Error("Could not connect to User Repository.", e);
 		}
 		Configuration.setDefaultApiClient(client);
 		api = new CoreV1Api();
+		System.out.println("api "+api);
 		isConnected=true;
 		return true;
 	}
 
+	@Override
 	public User[] list() throws Exception {
 		User [] users=null;
 		try {
@@ -87,6 +97,7 @@ public class UserRepository {
 		return item.getMetadata().getName();
 	}
 
+	@Override
 	public User read(String name, String namespace) throws ApiException{
 		V1ServiceAccount user = api.readNamespacedServiceAccount(name, namespace, null, true, false);
 		String secretName = user.getSecrets().get(0).getName();
